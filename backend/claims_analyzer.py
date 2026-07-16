@@ -71,6 +71,11 @@ if __name__ == "__main__":
                 first_independent = claim
                 break
 
+        # Skip this patent if no independent claim was found
+        if first_independent is None:
+            print(f"{pid} 没有找到独立 claim,跳过")
+            continue
+
         print(f"正在处理 {pid} 的 claim {first_independent['num']} …")
         features = extract_features(first_independent["text"])
 
