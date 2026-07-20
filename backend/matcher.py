@@ -52,6 +52,10 @@ def rank_products(patent, company):
     """对公司所有产品逐个打分,按分数降序返回 Top 2。"""
     features = get_first_independent_claim_features(patent)
 
+    # skip all LLM calls if no features
+    if not features:
+        return []
+
     results = []
     for prod in company["products"]:
         try:
