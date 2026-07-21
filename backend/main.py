@@ -2,9 +2,20 @@ import json
 from fastapi import FastAPI, HTTPException
 from data_loader import get_patent
 from data_loader import get_company
+from pydantic import BaseModel
+from pipeline import analyze
 
 # Create the FastAPI application
 app = FastAPI(title="Patent Infringement Check API")
+
+class CheckRequest(BaseModel):
+    patent_id: str
+    company_name: str
+
+# Infringement analysis
+@app.post("/api/check")
+def check(req: CheckRequest):
+    return analyze(req.patent_id, req.company_name)
 
 # Health check
 @app.get("/health")
