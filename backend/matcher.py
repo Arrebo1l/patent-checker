@@ -60,12 +60,12 @@ def rank_products(patent, company):
     for prod in company["products"]:
         try:
             r = check_product(features, prod)
+            r["product_name"] = prod["name"]
+            results.append(r)
         except Exception as e:
+            # a failed call is skipped
             print("跳过", prod["name"], e)
-            r = {"score": 0, "matched_features": [], "reason": "分析失败"}
-        r["product_name"] = prod["name"]
-        results.append(r)
-        time.sleep(1) 
+        time.sleep(1)
 
     results.sort(key=lambda x: x["score"], reverse=True)
     return results[:2]

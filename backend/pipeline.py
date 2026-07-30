@@ -44,7 +44,7 @@ def analyze(patent_id, company_name):
             claim_num = claim["num"]
             break
 
-    # Rank products; 503 if is empty
+    # 503 cases
     top2 = rank_products(patent, company)
     if not top2:
         raise HTTPException(status_code=503, detail="Analysis failed")
