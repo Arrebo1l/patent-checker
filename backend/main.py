@@ -4,9 +4,18 @@ from data_loader import get_patent
 from data_loader import get_company
 from pydantic import BaseModel
 from pipeline import analyze
+from fastapi.middleware.cors import CORSMiddleware
 
 # Create the FastAPI application
 app = FastAPI(title="Patent Infringement Check API")
+
+# Allow requests from the React dev server
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class CheckRequest(BaseModel):
     patent_id: str
