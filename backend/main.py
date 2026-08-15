@@ -5,6 +5,7 @@ from data_loader import get_company
 from pydantic import BaseModel
 from pipeline import analyze
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 
 # Create the FastAPI application
 app = FastAPI(title="Patent Infringement Check API")
@@ -17,6 +18,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Where saved reports are stored
+REPORTS = Path(__file__).resolve().parent.parent / "data" / "reports.json"
+
+# Append one analysis result to reports.json
+def save_report(report: dict):
+    reports = json.loads(REPORTS.read_text(encoding="utf-8")) if REPORTS.exists() else []
+    reports.append(report)
+    REPORTS.write_text(json.dumps(reports, ensure_ascii=False, indent=2), encoding="utf-8")
+
 class CheckRequest(BaseModel):
     patent_id: str
     company_name: str
@@ -25,6 +35,29 @@ class CheckRequest(BaseModel):
 @app.post("/api/check")
 def check(req: CheckRequest):
     return analyze(req.patent_id, req.company_name)
+
+# Save one analysis result
+@app.post("/api/reports")
+def create_report(report: dict):
+    save_report(report)
+    return {"status": "saved"}
+
+
+# List saved reports (summary fields only)
+@app.get("/api/reports")
+def list_reports():
+    if not REPORTS.exists():
+        return []
+    reports = json.loads(REPORTS.read_text(encoding="utf-8"))
+    return [
+        {
+            "analysis_id": r["analysis_id"],
+            "analysis_date": r["analysis_date"],
+            "patent_id": r["patent_id"],
+            "company_name": r["company_name"],
+        }
+        for r in reports
+    ]
 
 # Health check
 @app.get("/health")

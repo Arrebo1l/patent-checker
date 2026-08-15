@@ -1,0 +1,36 @@
+[
+  {
+    "analysis_id": "ae300ef1",
+    "analysis_date": "2026-08-15",
+    "patent_id": "US-RE49889-E1",
+    "company_name": "Walmart Inc.",
+    "analyzed_products_count": 10,
+    "top_infringing_products": [
+      {
+        "product_name": "Walmart Shopping App",
+        "infringement_likelihood": "Moderate",
+        "relevant_claims": [
+          "1"
+        ],
+        "matched_features": [
+          "展示产品电子广告",
+          "将产品标识添加至在线购物清单"
+        ],
+        "explanation": "Walmart App具备广告展示与购物清单功能，符合部分核心特征。但描述未明确提及针对广告的交互逻辑（如负面响应处理及后续启动机制），故判定为部分吻合。"
+      },
+      {
+        "product_name": "Walmart Grocery",
+        "infringement_likelihood": "Moderate",
+        "relevant_claims": [
+          "1"
+        ],
+        "matched_features": [
+          "展示产品电子广告",
+          "将产品标识添加至在线购物清单"
+        ],
+        "explanation": "该产品具备广告展示及自动构建购物清单功能，符合核心业务逻辑。但描述中未明确提及针对广告的交互式选择、负面响应处理及后续启动购物应用的特定流程。"
+      }
+    ],
+    "overall_risk_assessment": "该两款产品均具备广告展示与购物清单构建的核心功能，与目标专利权利要求存在部分特征重合，整体侵权风险处于中等水平。目前主要缺失针对广告负面响应处理及后续交互启动机制的明确证据，导致技术特征的完全吻合度尚不充分。建议后续重点核查产品后台逻辑及交互流程，以进一步确认是否存在对专利保护范围的完整覆盖。"
+  }
+]
