@@ -15,16 +15,12 @@ export default function App() {
   const [error, setError] = useState(null);
   const [reports, setReports] = useState([]);
 
-  async function loadReports() {
-    const res = await fetch("http://127.0.0.1:8000/api/reports");
-    setReports(await res.json());
-  }
 
   // Load history once when the page opens
   useEffect(() => {
     loadReports();
   }, []);
-  
+
   async function handleAnalyze() {
     setLoading(true);
     setError(null);
@@ -49,13 +45,34 @@ export default function App() {
   }
 
   async function handleSave() {
-    await fetch("http://127.0.0.1:8000/api/reports", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(result),
-    });
-    await loadReports();
-    alert("已保存");
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result),
+      });
+      if (!res.ok) {
+        alert("保存失败");
+        return;
+      }
+      await loadReports();
+      alert("已保存");
+    } catch (e) {
+      alert("保存失败:无法连接后端服务");
+    }
+  }
+
+  async function loadReports() {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/reports");
+      if (!res.ok) {
+        console.error("加载历史报告失败");
+        return;
+      }
+      setReports(await res.json());
+    } catch (e) {
+      console.error("加载历史报告失败:无法连接后端服务");
+    }
   }
 
   function downloadJson(data) {
