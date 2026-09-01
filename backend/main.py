@@ -1,14 +1,17 @@
 import json
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from data_loader import get_patent
 from data_loader import get_company
 from pydantic import BaseModel
 from pipeline import analyze
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from errors import AppError, app_error_handler
 
 # Create the FastAPI application
 app = FastAPI(title="Patent Infringement Check API")
+
+app.add_exception_handler(AppError, app_error_handler)
 
 # Allow requests from the React dev server
 app.add_middleware(
@@ -31,10 +34,31 @@ class CheckRequest(BaseModel):
     patent_id: str
     company_name: str
 
+# Reject empty or overly long input
+def validate_input(value: str, field: str):
+    v = value.strip()
+    if not v:
+        raise AppError(422, "INVALID_INPUT", f"{field} cannot be empty")
+    if len(v) > 100:
+        raise AppError(422, "INVALID_INPUT", f"{field} is too long (max 100 characters)")
+    return v
+
+# In-memory cache: (patent_id, company_name) -> result
+CACHE = {}
+
 # Infringement analysis
 @app.post("/api/check")
 def check(req: CheckRequest):
-    return analyze(req.patent_id, req.company_name)
+    patent_id = validate_input(req.patent_id, "patent_id")
+    company_name = validate_input(req.company_name, "company_name")
+
+    key = (patent_id.lower(), company_name.lower())
+    if key in CACHE:
+        return {**CACHE[key], "cached": True}
+
+    result = analyze(patent_id, company_name)
+    CACHE[key] = result
+    return result
 
 # Save one analysis result
 @app.post("/api/reports")
@@ -69,7 +93,7 @@ def health():
 def read_patent(publication_number: str):
     p = get_patent(publication_number)
     if p is None:
-        raise HTTPException(status_code=404, detail="Patent not found")
+        raise AppError(404, "PATENT_NOT_FOUND", "Patent not found")
     return {
         "publication_number": p["publication_number"],
         "title": p["title"],
@@ -83,7 +107,7 @@ def read_patent(publication_number: str):
 def read_company(company_name):
     c = get_company(company_name)
     if c is None:
-        raise HTTPException(status_code=404, detail="Company not found")
+        raise AppError(404, "COMPANY_NOT_FOUND", "Company not found")
     return {
         "company_name": c["name"],
         "products": c["products"]

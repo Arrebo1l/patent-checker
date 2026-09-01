@@ -15,7 +15,6 @@ export default function App() {
   const [error, setError] = useState(null);
   const [reports, setReports] = useState([]);
 
-
   // Load history once when the page opens
   useEffect(() => {
     loadReports();
@@ -33,7 +32,7 @@ export default function App() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.detail || "分析失败");
+        setError(data.error?.message || "分析失败");
         return;
       }
       setResult(data);

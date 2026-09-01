@@ -1,7 +1,7 @@
 import uuid
 import json
 from datetime import date
-from fastapi import HTTPException
+from errors import AppError
 from data_loader import get_patent, get_company
 from matcher import rank_products, get_first_independent_claim_features
 from claims_analyzer import parse_claims, is_independent
@@ -30,11 +30,11 @@ def analyze(patent_id, company_name):
     # 404 if is missing
     patent = get_patent(patent_id)
     if patent is None:
-        raise HTTPException(status_code=404, detail="Patent not found")
+        raise AppError(404, "PATENT_NOT_FOUND", "Patent not found")
 
     company = get_company(company_name)
     if company is None:
-        raise HTTPException(status_code=404, detail="Company not found")
+        raise AppError(404, "COMPANY_NOT_FOUND", "Company not found")
 
     # Find the claim number we are analyzing
     claims = parse_claims(patent)
@@ -47,7 +47,7 @@ def analyze(patent_id, company_name):
     # 503 cases
     top2 = rank_products(patent, company)
     if not top2:
-        raise HTTPException(status_code=503, detail="Analysis failed")
+        raise AppError(503, "LLM_ERROR", "Analysis failed, please try again later")
 
     # Required output structure
     top_products = []
