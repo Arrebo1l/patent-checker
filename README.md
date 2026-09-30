@@ -1,68 +1,68 @@
 # Patent Infringement Check App
 
-输入一个专利号和一家公司名,自动筛出该公司最可能侵权的 2 个产品,给出风险等级、命中的技术特征和判定理由。
+Enter a patent number and a company name, and the app flags the two products from that company most likely to infringe — with a risk level, the matched technical features, and the reasoning behind each verdict.
 
-面向专利风险的**初步筛查**场景:把一家公司几十个产品缩小到最值得人工细看的几个,而不是替代法律判断。
+Built for **preliminary screening**: it narrows dozens of products down to the few worth a closer human look. It is not a substitute for legal judgment.
 
-## 架构
+## Architecture
 
 ```
-React (Vite)  →  FastAPI  →  LangChain (Gemini)  →  本地 JSON 数据
+React (Vite)  →  FastAPI  →  LangChain (Gemini)  →  Local JSON data
 ```
 
-| 层 | 职责 |
+| Layer | Responsibility |
 |---|---|
-| 前端 | 表单输入、结果卡片展示、报告保存与导出 |
-| 后端 | REST 接口、输入校验、结果缓存、统一错误处理 |
-| LLM | claim 特征提取、产品逐个打分、整体风险总结 |
-| 数据 | 专利库、公司产品库、历史报告(本地 JSON) |
+| Frontend | Input form, result cards, report saving and export |
+| Backend | REST API, input validation, result caching, unified error handling |
+| LLM | Claim feature extraction, per-product scoring, overall risk summary |
+| Data | Patent corpus, company product catalog, saved reports (local JSON) |
 
-一次分析的内部流程:
+How a single analysis runs:
 
-1. 按专利号和公司名查出记录(公司名支持中文别名和大小写模糊匹配)
-2. 解析专利 claims,找出第一条独立权利要求
-3. 用 LLM 从该 claim 中提取 3~6 条关键技术特征
-4. 拿这组特征逐个比对公司的每个产品,LLM 给出 0~100 分及理由
-5. 按分数排序取 Top 2,映射为 High / Moderate / Low 风险等级
-6. 再调一次 LLM,基于 Top 2 生成三句话的整体风险评估
+1. Look up the patent and the company (company names support Chinese aliases and case-insensitive partial matching)
+2. Parse the patent's claims and locate the first independent claim
+3. Use the LLM to extract 3–6 key technical features from that claim
+4. Score every product of the company against those features — the LLM returns a 0–100 score with a rationale
+5. Sort by score, keep the top 2, and map each score to a High / Moderate / Low risk level
+6. Make one more LLM call to write a three-sentence overall risk assessment from the top 2 results
 
-## 环境要求
+## Requirements
 
 - Python 3.11+
 - Node.js 18+
-- Google Gemini API key
+- A Google Gemini API key
 
-## 数据准备
+## Data Setup
 
-`data/company_product_data.json` 已包含在仓库中。
+`data/company_product_data.json` is included in the repository.
 
-`data/patents.json`(约 17 MB)因体积未纳入版本控制,需自行放入 `data/` 目录后再启动后端,否则 `data_loader.py` 在加载时会直接报错。
+`data/patents.json` (~17 MB) is excluded from version control because of its size. Place it in the `data/` directory before starting the backend — otherwise `data_loader.py` will fail on startup.
 
-## 后端启动
+## Running the Backend
 
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-在 `backend/` 目录下创建 `.env` 文件,填入 API key:
+Create a `.env` file inside `backend/` with your API key:
 
 ```
 GOOGLE_API_KEY=your_api_key_here
 ```
 
-启动服务:
+Start the server:
 
 ```bash
 uvicorn main:app --reload
 ```
 
-- 服务地址:`http://127.0.0.1:8000`
-- 交互式 API 文档:`http://127.0.0.1:8000/docs`
+- API server: `http://127.0.0.1:8000`
+- Interactive API docs: `http://127.0.0.1:8000/docs`
 
-## 前端启动
+## Running the Frontend
 
-另开一个终端:
+In a separate terminal:
 
 ```bash
 cd frontend
@@ -70,22 +70,22 @@ npm install
 npm run dev
 ```
 
-页面地址:`http://localhost:5173`
+App URL: `http://localhost:5173`
 
-前端默认请求 `http://127.0.0.1:8000`,后端已对 `http://localhost:5173` 开放 CORS,两端都用默认端口即可直接联通。
+The frontend calls `http://127.0.0.1:8000` by default, and the backend allows CORS from `http://localhost:5173`, so the two connect out of the box on their default ports.
 
-## API 一览
+## API Reference
 
-| 方法 | 路径 | 用途 |
+| Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/check` | 核心接口。传入 `patent_id` 和 `company_name`,返回完整风险分析 |
-| POST | `/api/reports` | 保存一次分析结果到 `data/reports.json` |
-| GET | `/api/reports` | 返回历史报告列表(仅摘要字段) |
-| GET | `/health` | 健康检查 |
-| GET | `/patents/{publication_number}` | 查询单个专利的基本信息 |
-| GET | `/companies/{company_name}/products` | 查询某公司的产品列表 |
+| POST | `/api/check` | Core endpoint. Takes `patent_id` and `company_name`, returns the full risk analysis |
+| POST | `/api/reports` | Saves an analysis result to `data/reports.json` |
+| GET | `/api/reports` | Lists saved reports (summary fields only) |
+| GET | `/health` | Health check |
+| GET | `/patents/{publication_number}` | Returns basic info for one patent |
+| GET | `/companies/{company_name}/products` | Returns a company's product list |
 
-### 请求示例
+### Example Request
 
 ```bash
 curl -X POST 'http://127.0.0.1:8000/api/check' \
@@ -93,7 +93,7 @@ curl -X POST 'http://127.0.0.1:8000/api/check' \
   -d '{"patent_id": "US-RE49889-E1", "company_name": "Walmart"}'
 ```
 
-### 响应结构
+### Response Shape
 
 ```json
 {
@@ -107,58 +107,60 @@ curl -X POST 'http://127.0.0.1:8000/api/check' \
       "product_name": "Walmart Shopping App",
       "infringement_likelihood": "Moderate",
       "relevant_claims": ["1"],
-      "matched_features": ["展示产品电子广告", "将产品标识添加至在线购物清单"],
-      "explanation": "……"
+      "matched_features": ["Displays an electronic product advertisement", "Adds the product identifier to an online shopping list"],
+      "explanation": "..."
     }
   ],
-  "overall_risk_assessment": "……"
+  "overall_risk_assessment": "..."
 }
 ```
 
-命中缓存时响应会额外带上 `"cached": true`。
+When a result is served from cache, the response includes an extra `"cached": true` field.
 
-### 错误响应
+> Note: the LLM prompts are written in Chinese, so feature lists and explanations in real responses are returned in Chinese. The example above is translated for readability.
 
-所有错误统一为同一结构:
+### Error Responses
+
+Every error uses the same shape:
 
 ```json
 {"error": {"code": "PATENT_NOT_FOUND", "message": "Patent not found"}}
 ```
 
-| 代码 | 状态码 | 含义 |
+| Code | Status | Meaning |
 |---|---|---|
-| `PATENT_NOT_FOUND` | 404 | 专利号不存在 |
-| `COMPANY_NOT_FOUND` | 404 | 公司名查不到 |
-| `INVALID_INPUT` | 422 | 输入为空或超过 100 字符 |
-| `LLM_ERROR` | 503 | LLM 调用全部失败,稍后重试 |
+| `PATENT_NOT_FOUND` | 404 | The patent number does not exist |
+| `COMPANY_NOT_FOUND` | 404 | The company name could not be matched |
+| `INVALID_INPUT` | 422 | Input is empty or longer than 100 characters |
+| `LLM_ERROR` | 503 | All LLM calls failed — retry later |
 
-## 性能说明
+## Performance
 
-一次完整分析内部要调用 11 次 LLM(10 个产品打分 + 1 次总结),首次请求约 60 秒。相同查询会命中内存缓存,实测第二次为 0.021 秒。缓存 key 经过大小写归一化,`Walmart` 与 `walmart` 共用一份;服务重启后缓存清空。
+A full analysis makes 11 LLM calls internally (10 product scores + 1 summary), so a cold request takes about 60 seconds. Repeat queries are served from an in-memory cache — measured at 0.021 seconds on the second request. Cache keys are case-normalized, so `Walmart` and `walmart` share one entry. The cache is cleared when the server restarts.
 
-## 已知限制
+## Known Limitations
 
-1. **仅为初步筛查,不构成法律意见。** 输出用于缩小人工审查范围,真实侵权判定需结合完整权利要求和专业法律分析。
-2. **依赖 LLM,结果存在波动。** 即使温度设为 0,claim 特征提取的粒度仍可能在不同次运行间变化,进而影响评分和风险等级。
-3. **数据为固定样本库。** 专利与公司产品数据来自本地 JSON 文件,非实时抓取,覆盖范围有限;公司中文别名表为手工维护。
-4. **每个专利只分析第一条独立权利要求**,不覆盖全部 claims,也不做从属权利要求的逐条比对。
+1. **Preliminary screening only, not legal advice.** Output is meant to narrow the scope of human review; an actual infringement determination requires the full claim set and professional legal analysis.
+2. **LLM-dependent, so results vary.** Even at temperature 0, the granularity of extracted claim features can shift between runs, which in turn affects scores and risk levels.
+3. **Fixed sample dataset.** Patent and product data come from local JSON files rather than live sources, so coverage is limited. The Chinese company alias table is maintained by hand.
+4. **Only the first independent claim is analyzed.** The app does not cover all claims or compare dependent claims one by one.
 
-## 目录结构
+## Project Structure
 
 ```
 patent-checker/
 ├── backend/
-│   ├── main.py              # FastAPI 应用、路由、输入校验、缓存
-│   ├── pipeline.py          # 分析流水线编排
-│   ├── matcher.py           # 产品打分与排序
-│   ├── claims_analyzer.py   # claim 解析与特征提取
-│   ├── data_loader.py       # 数据加载、公司名归一化
-│   ├── agent.py             # 命令行 AI agent(LLM 路由)
-│   ├── errors.py            # 统一错误类型与异常处理器
+│   ├── main.py              # FastAPI app, routes, input validation, caching
+│   ├── pipeline.py          # Analysis pipeline orchestration
+│   ├── matcher.py           # Product scoring and ranking
+│   ├── claims_analyzer.py   # Claim parsing and feature extraction
+│   ├── data_loader.py       # Data loading, company name normalization
+│   ├── agent.py             # Command-line AI agent (LLM routing)
+│   ├── errors.py            # Unified error type and exception handler
 │   ├── requirements.txt
-│   └── .env                 # 不提交
-├── frontend/                # React 应用
+│   └── .env                 # Not committed
+├── frontend/                # React app
 ├── data/                    # patents.json / company_product_data.json / reports.json
-├── docs/                    # 每周文档、测试记录、结题报告
+├── docs/                    # Weekly notes, test records, final report (in Chinese)
 └── README.md
 ```
